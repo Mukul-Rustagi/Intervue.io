@@ -54,6 +54,7 @@ export const TeacherDashboard = ({
   const [question, setQuestion] = useState("");
   const [durationSeconds, setDurationSeconds] = useState(60);
   const [options, setOptions] = useState(["", ""]);
+  const [isOptionCorrect, setIsOptionCorrect] = useState([true, false]);
   const [showComposer, setShowComposer] = useState<boolean>(() => !state.activePoll);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -82,6 +83,11 @@ export const TeacherDashboard = ({
     }
 
     setOptions((prev) => [...prev, ""]);
+    setIsOptionCorrect((prev) => [...prev, false]);
+  };
+
+  const setOptionCorrectness = (index: number, value: boolean) => {
+    setIsOptionCorrect((prev) => prev.map((item, itemIndex) => (itemIndex === index ? value : item)));
   };
 
   const handleCreatePoll = (event: FormEvent<HTMLFormElement>) => {
@@ -105,6 +111,7 @@ export const TeacherDashboard = ({
     setQuestion("");
     setDurationSeconds(60);
     setOptions(["", ""]);
+    setIsOptionCorrect([true, false]);
   };
 
   return (
@@ -188,9 +195,24 @@ export const TeacherDashboard = ({
                         maxLength={200}
                       />
                     </div>
-                    <div className="option-correctness" aria-hidden="true">
-                      <span className={`correct-choice ${index === 0 ? "correct-choice--active" : ""}`}>Yes</span>
-                      <span className={`correct-choice ${index !== 0 ? "correct-choice--active" : ""}`}>No</span>
+                    <div className="option-correctness" role="radiogroup" aria-label={`Option ${index + 1} correctness`}>
+                      <button
+                        type="button"
+                        className={`correct-choice-button ${isOptionCorrect[index] ? "correct-choice-button--active" : ""}`}
+                        onClick={() => setOptionCorrectness(index, true)}
+                        aria-pressed={Boolean(isOptionCorrect[index])}
+                      >
+                        <span className={`correct-choice ${isOptionCorrect[index] ? "correct-choice--active" : ""}`}>Yes</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`correct-choice-button ${!isOptionCorrect[index] ? "correct-choice-button--active" : ""}`}
+                        onClick={() => setOptionCorrectness(index, false)}
+                        aria-pressed={!isOptionCorrect[index]}
+                      >
+                        <span className={`correct-choice ${!isOptionCorrect[index] ? "correct-choice--active" : ""}`}>No</span>
+                      </button>
                     </div>
                   </div>
                 ))}
