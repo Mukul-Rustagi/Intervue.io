@@ -37,6 +37,7 @@ export interface TeacherState {
   role: "teacher";
   serverTime: string;
   activePoll: PollSnapshot | null;
+  canCreateNextPoll: boolean;
   connectedStudents: ConnectedStudent[];
   pollHistory: PollSnapshot[];
   chatMessages: ChatMessage[];

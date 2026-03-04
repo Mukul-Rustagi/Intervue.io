@@ -29,6 +29,7 @@ const EMPTY_TEACHER_STATE: TeacherState = {
   role: "teacher",
   serverTime: new Date().toISOString(),
   activePoll: null,
+  canCreateNextPoll: true,
   connectedStudents: [],
   pollHistory: [],
   chatMessages: []

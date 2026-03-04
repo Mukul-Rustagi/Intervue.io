@@ -58,10 +58,7 @@ export const TeacherDashboard = ({
   const [showHistory, setShowHistory] = useState(false);
 
   const hasActivePoll = Boolean(state.activePoll && state.activePoll.status === "active");
-  const latestClosedPoll = state.pollHistory[0] ?? null;
-  const canCreateNextPoll =
-    !latestClosedPoll || latestClosedPoll.endReason === "all_answered" || state.connectedStudents.length === 0;
-  const canCreatePoll = !hasActivePoll && canCreateNextPoll;
+  const canCreatePoll = !hasActivePoll && state.canCreateNextPoll !== false;
   const shouldShowComposer = showComposer && canCreatePoll;
   const focusPoll = state.activePoll ?? state.pollHistory[0] ?? null;
 

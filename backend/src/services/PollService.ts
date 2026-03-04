@@ -203,6 +203,7 @@ export class PollService extends EventEmitter {
       role: "teacher",
       serverTime: new Date().toISOString(),
       activePoll: null,
+      canCreateNextPoll: true,
       connectedStudents: this.studentRegistry.getConnectedStudents(),
       pollHistory: [],
       chatMessages
@@ -213,11 +214,14 @@ export class PollService extends EventEmitter {
     }
 
     const activePoll = await this.syncActivePollWithClock();
+    const latestClosedPoll = await PollModel.findOne({ status: "closed" }).sort({ endedAt: -1 });
     const pollHistory = await this.getPollHistory(15);
+    const canCreateNextPoll = !activePoll && (await this.canCreateNextPoll(latestClosedPoll));
 
     return {
       ...fallback,
       activePoll: activePoll ? this.serializePoll(activePoll) : null,
+      canCreateNextPoll,
       pollHistory
     };
   }
@@ -302,21 +306,39 @@ export class PollService extends EventEmitter {
 
   private async assertCanCreateNextPoll(): Promise<void> {
     const latestClosedPoll = await PollModel.findOne({ status: "closed" }).sort({ endedAt: -1 });
-    if (!latestClosedPoll) {
-      return;
-    }
-
-    if (latestClosedPoll.endReason === "all_answered") {
-      return;
-    }
-
-    if (this.studentRegistry.getConnectedStudentCount() === 0) {
+    const allowed = await this.canCreateNextPoll(latestClosedPoll);
+    if (allowed) {
       return;
     }
 
     throw new ConflictError(
       "You can ask a new question only after all connected students answer the previous one."
     );
+  }
+
+  private async canCreateNextPoll(latestClosedPoll: PollDocument | null): Promise<boolean> {
+    const connectedStudents = this.studentRegistry.getConnectedStudents();
+    if (connectedStudents.length === 0) {
+      return true;
+    }
+
+    if (!latestClosedPoll) {
+      return true;
+    }
+
+    if (latestClosedPoll.endReason === "all_answered") {
+      return true;
+    }
+
+    const connectedSessionIds = connectedStudents.map((student) => student.sessionId);
+    const votedConnectedStudents = await VoteModel.countDocuments({
+      pollId: latestClosedPoll._id,
+      studentSessionId: {
+        $in: connectedSessionIds
+      }
+    });
+
+    return votedConnectedStudents === connectedSessionIds.length;
   }
 
   private async syncActivePollWithClock(): Promise<PollDocument | null> {
